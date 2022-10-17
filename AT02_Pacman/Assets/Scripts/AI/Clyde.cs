@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Clyde : Ghost
 {
@@ -9,10 +10,12 @@ public class Clyde : Ghost
     private float time = 0;
     private float timer = -1;
 
+    public NavMeshAgent clydeAgent;
     protected override void Awake()
     {
         base.Awake();
         DefaultState = new GhostState_Chase(this);
+        clydeAgent = GetComponent<NavMeshAgent>();
     }
 
     protected override void Start()

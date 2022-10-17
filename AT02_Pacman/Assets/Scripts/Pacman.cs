@@ -7,7 +7,7 @@ public class Pacman : MonoBehaviour
     //Serialized variables
     [SerializeField] private int lives = 3;
     [SerializeField] private float invincibleTime = 3;
-    [SerializeField] private float speed = 3;
+    [SerializeField] public float speed = 3;
     [SerializeField] private Transform pacmanSpawn;
     [SerializeField] private GameObject[] lifeIcons;
     [SerializeField] private AudioClip deathClip;
@@ -209,5 +209,12 @@ public class Pacman : MonoBehaviour
             }
         }
         return false;
+    }
+
+    public void TeleportToPoistion(Vector3 position)
+    {
+        controller.enabled = false;
+        transform.position = position;
+        controller.enabled = true;
     }
 }

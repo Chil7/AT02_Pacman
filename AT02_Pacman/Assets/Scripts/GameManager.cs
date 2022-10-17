@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.AI;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Transform bonusItemSpawn;
     [SerializeField] private Bounds ghostSpawnBounds;
     [SerializeField] private GameObject endPanel;
+    [SerializeField] private GameObject victoryPanel;
     [SerializeField] private AudioClip pelletClip;
     [SerializeField] private AudioClip powerPelletClip;
     [SerializeField] private AudioClip bonusItemClip;
@@ -23,6 +25,17 @@ public class GameManager : MonoBehaviour
     private int score = 0;
     private int collectedPellets = 0;
     private AudioSource aSrc;
+    private bool gamePaused = false;
+    private PauseMenuHUD hud;
+    private Pacman player;
+    private Pinky pinky;
+    private Blinky blinky;
+    private Inky inky;
+    private Clyde clyde;
+
+    public float stopSpeed = 0f;
+    public float pacManSpeed = 4.5f;
+    public float ghostSpeed = 3.5f;
 
     //Auto-properties
     public float PowerUpTimer { get; private set; } = -1;
@@ -46,6 +59,13 @@ public class GameManager : MonoBehaviour
     /// </summary>
     private void Awake()
     {
+        pinky = FindObjectOfType<Pinky>();
+        inky = FindObjectOfType<Inky>();
+        blinky = FindObjectOfType<Blinky>();
+        clyde = FindObjectOfType<Clyde>();
+        hud = FindObjectOfType<PauseMenuHUD>();
+        player = FindObjectOfType<Pacman>();
+
         //Set singleton
         if(Instance == null)
         {
@@ -77,9 +97,9 @@ public class GameManager : MonoBehaviour
     /// Set initial game state.
     /// </summary>
     private void Start()
-    {        
+    {
         //Assign delegates/events
-        Event_GameVictory += ToggleEndPanel;
+        Event_GameVictory += VictoryPanel;
         Delegate_GameOver += ToggleEndPanel;
         //Disable bonus item
         if (bonusItem != null)
@@ -89,6 +109,18 @@ public class GameManager : MonoBehaviour
         else
         {
             Debug.LogError("Game Manager: Bonus item must be in the scene and tagged as 'Bonus Item'!");
+        }
+        //Disable Victory panel
+        if (victoryPanel != null)
+        {
+            if (victoryPanel.activeSelf == true)
+            {
+                VictoryPanel();
+            }
+        }
+        else
+        {
+            Debug.LogError("Game Manager: Victory Panel has not been assigned");
         }
         //Disable end game panel
         if (endPanel != null)
@@ -111,6 +143,8 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogError("Game Manager: Score Text has not been assigned!");
         }
+
+        gamePaused = false;
     }
 
     /// <summary>
@@ -118,14 +152,23 @@ public class GameManager : MonoBehaviour
     /// </summary>
     void Update()
     {
-        //Active power up timer
-        if(PowerUpTimer > -1)
+
+        if(Input.GetButtonDown("Cancel") == true)
         {
-            PowerUpTimer += Time.deltaTime;
-            if(PowerUpTimer > powerUpTime)  //Power up timer finished
+            TogglePauseGame();
+        }
+
+        if (gamePaused == false)
+        {
+            //Active power up timer
+            if (PowerUpTimer > -1)
             {
-                Event_EndPowerUp.Invoke();
-                PowerUpTimer = -1;
+                PowerUpTimer += Time.deltaTime;
+                if (PowerUpTimer > powerUpTime)  //Power up timer finished
+                {
+                    Event_EndPowerUp.Invoke();
+                    PowerUpTimer = -1;
+                }
             }
         }
     }
@@ -245,6 +288,8 @@ public class GameManager : MonoBehaviour
         if(endPanel.activeSelf == false)
         {
             endPanel.SetActive(true);
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.Confined;
         }
         else
         {
@@ -252,9 +297,54 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Toggles the victory panel on and off.
+    /// </summary>
+    private void VictoryPanel()
+    {
+        if(victoryPanel.activeSelf == false)
+        {
+            victoryPanel.SetActive(true);
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.Confined;
+        }
+        else
+        {
+            victoryPanel.SetActive(false);
+        }
+    }
+
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(ghostSpawnBounds.center, ghostSpawnBounds.size);
+    }
+
+    public void TogglePauseGame()
+    {
+        gamePaused = hud.TogglePauseMenu();
+        if(gamePaused == true)
+        {
+            player.speed = stopSpeed;
+            pinky.pinkyAgent.speed = stopSpeed;
+            inky.inkyAgent.speed = stopSpeed;
+            blinky.blinkyAgent.speed = stopSpeed;
+            clyde.clydeAgent.speed = stopSpeed;
+
+        }
+        else
+        {
+            player.speed = pacManSpeed;
+            pinky.pinkyAgent.speed = ghostSpeed;
+            inky.inkyAgent.speed = ghostSpeed;
+            blinky.blinkyAgent.speed = ghostSpeed;
+            clyde.clydeAgent.speed = ghostSpeed;
+
+        }
+    }
+
+    public void LoadMainMenu()
+    {
+        SceneManager.LoadScene(0);
     }
 }

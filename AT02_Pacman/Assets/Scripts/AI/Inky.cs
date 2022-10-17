@@ -1,15 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Inky : Ghost
 {
     [SerializeField] private Vector3 offset;
-
+    public NavMeshAgent inkyAgent;
     protected override void Awake()
     {
         base.Awake();
         DefaultState = new GhostState_Flank(this, offset);
+        inkyAgent = GetComponent<NavMeshAgent>();
     }
 
     protected override void Start()
